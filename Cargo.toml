@@ -1,0 +1,12 @@
+[package]
+name = "ednaldo"
+version = "0.1.0"
+authors = ["Michell Ocaña <ocana.1997@hotmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+term_size = "1.0.0-beta1"
+image = "0.23.4"
+colorful = "0.2.1"
