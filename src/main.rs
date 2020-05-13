@@ -3,21 +3,29 @@ mod img;
 
 use grid::{get_pixel_grid, PixelGrid};
 use image::DynamicImage;
-use img::{print_image, resize_image};
-use term_size;
+use img::{get_random_image, print_image, resize_image};
+use std::process::exit;
+use term_size::dimensions as get_terminal_dimensions;
 
 fn main() {
-    if let Some((terminal_width, _terminal_height)) = term_size::dimensions() {
-        match image::open("images/ednaldo.jpg") {
-            Ok(result) => {
-                let resized_result: DynamicImage =
-                    resize_image(result, terminal_width as u32, Some(2));
-                let pixel_grid: PixelGrid = get_pixel_grid(resized_result);
-                print_image(pixel_grid, Some(2));
-            }
-            Err(_) => println!("não foi possível ler a imagem Ednaldo Pereira"),
+    let random_image: DynamicImage = match get_random_image() {
+        Ok(image) => image,
+        Err(err) => {
+            println!("{}", err);
+            exit(0)
         }
-    } else {
-        println!("erro ao buscar largura do terminal Ednaldo Pereira");
-    }
+    };
+
+    let terminal_width: u32 = match get_terminal_dimensions() {
+        Some((w, _h)) => w as u32,
+        None => {
+            println!("erro ao buscar largura do terminal Ednaldo Pereira");
+            exit(0)
+        }
+    };
+
+    let resized_image: DynamicImage = resize_image(random_image, terminal_width, Some(2));
+    let pixel_grid: PixelGrid = get_pixel_grid(resized_image);
+
+    print_image(pixel_grid, Some(2));
 }
