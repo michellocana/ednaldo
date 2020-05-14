@@ -9,7 +9,7 @@ use term_size::dimensions as get_terminal_dimensions;
 
 fn main() {
     let random_image: DynamicImage = match get_random_image() {
-        Ok(image) => image,
+        Ok((image, _image_path)) => image,
         Err(err) => {
             println!("{}", err);
             exit(0)

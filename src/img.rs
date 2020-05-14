@@ -59,15 +59,15 @@ pub fn print_image(pixel_grid: PixelGrid, characters_per_pixel: Option<u32>) -> 
     output
 }
 
-pub fn get_random_image() -> Result<DynamicImage, &'static str> {
+pub fn get_random_image() -> Result<(DynamicImage, String), &'static str> {
     let mut rng = rand::thread_rng();
 
     if let Ok(images) = read_image_dir() {
         let index = rng.gen_range(0, images.len());
-        let image_path = &images[index];
+        let image_path = images[index].as_path();
 
         match image::open(image_path) {
-            Ok(image) => Ok(image),
+            Ok(image) => Ok((image, String::from(image_path.to_str().unwrap()))),
             Err(_) => Err("não foi possível ler a imagem Ednaldo Pereira"),
         }
     } else {
@@ -119,4 +119,33 @@ fn test_print_image() {
     assert_eq!(r, &137);
     assert_eq!(g, &45);
     assert_eq!(b, &46);
+}
+
+#[test]
+fn test_get_random_image() {
+    // given
+    use std::collections::HashSet;
+    let images = read_image_dir().unwrap();
+    let range_size = images.len() * 10;
+    let iter = (0..range_size).into_iter();
+    let mut image_names: Vec<String> = iter.map(|_n| get_random_image().unwrap().1).collect();
+
+    // when
+    let unique_image_names: HashSet<String> = image_names.drain(0..range_size).collect();
+    let image_count = images.len();
+
+    // assert
+    assert_eq!(unique_image_names.len(), image_count);
+}
+
+#[test]
+fn test_read_image_dir() {
+    // given
+    let images = read_image_dir().unwrap();
+
+    // when
+    let image_count = images.len();
+
+    // assert
+    assert_ne!(image_count, 0);
 }
