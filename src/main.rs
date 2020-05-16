@@ -11,6 +11,7 @@ use term_size::dimensions as get_terminal_dimensions;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // TODO make "ednaldo" command only work with "pereira" arg
     let image_list: ImageList = get_image_list().await?;
     let random_image_url = get_random_image_url(image_list);
     let random_image = get_temp_image(random_image_url).await?;

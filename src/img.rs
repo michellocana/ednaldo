@@ -124,6 +124,7 @@ async fn test_get_random_image_url() {
     assert_eq!(unique_image_names.len(), image_count);
 }
 
+// TODO make everything work in memory
 pub async fn get_temp_image(url: String) -> Result<DynamicImage, Box<dyn std::error::Error>> {
     let image_bytes = reqwest::get(&url[..]).await?.bytes().await?;
     let mut temp_dir = temp_dir();
