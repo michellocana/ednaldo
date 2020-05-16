@@ -1,0 +1,5 @@
+bandeira.jpg
+carro.jpg
+ednaldo.jpg
+oculos.jpg
+praia.jpg
