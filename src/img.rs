@@ -2,9 +2,13 @@ use crate::grid::PixelGrid;
 use colorful::{Colorful, RGB};
 use image::{imageops, DynamicImage};
 use rand::Rng;
-use std::fs::read_dir;
-use std::io;
-use std::path::PathBuf;
+use reqwest;
+use std::env::temp_dir;
+
+const GITHUB_BASE_URL: &'static str =
+    "https://raw.githubusercontent.com/michellocana/ednaldo/master/";
+
+pub type ImageList = Vec<String>;
 
 pub fn resize_image(
     image: DynamicImage,
@@ -25,6 +29,20 @@ pub fn resize_image(
     );
 
     resized_image
+}
+
+#[test]
+fn test_resize_image() {
+    // given
+    let image: DynamicImage = image::open("fixtures/ednaldinho.jpg").unwrap();
+    let resized_image: DynamicImage = resize_image(image, 10, None);
+
+    // when
+    let (image_width, image_height) = resized_image.to_rgb().dimensions();
+
+    // assert
+    assert_eq!(image_width, 10);
+    assert_eq!(image_height, 10);
 }
 
 pub fn print_image(pixel_grid: PixelGrid, characters_per_pixel: Option<u32>) -> String {
@@ -59,48 +77,6 @@ pub fn print_image(pixel_grid: PixelGrid, characters_per_pixel: Option<u32>) -> 
     output
 }
 
-pub fn get_random_image() -> Result<(DynamicImage, String), &'static str> {
-    let mut rng = rand::thread_rng();
-
-    if let Ok(images) = read_image_dir() {
-        let index = rng.gen_range(0, images.len());
-        let image_path = images[index].as_path();
-
-        match image::open(image_path) {
-            Ok(image) => Ok((image, String::from(image_path.to_str().unwrap()))),
-            Err(_) => Err("não foi possível ler a imagem Ednaldo Pereira"),
-        }
-    } else {
-        Err("não foi possível procurar uma imagem Ednaldo Pereira")
-    }
-}
-
-fn read_image_dir() -> io::Result<Vec<PathBuf>> {
-    let mut paths = vec![];
-
-    for entry in read_dir("images")? {
-        let entry = entry?;
-        let path = entry.path();
-        paths.push(path);
-    }
-
-    Ok(paths)
-}
-
-#[test]
-fn test_resize_image() {
-    // given
-    let image: DynamicImage = image::open("fixtures/ednaldinho.jpg").unwrap();
-    let resized_image: DynamicImage = resize_image(image, 10, None);
-
-    // when
-    let (image_width, image_height) = resized_image.to_rgb().dimensions();
-
-    // assert
-    assert_eq!(image_width, 10);
-    assert_eq!(image_height, 10);
-}
-
 #[test]
 fn test_print_image() {
     // given
@@ -121,31 +97,85 @@ fn test_print_image() {
     assert_eq!(b, &46);
 }
 
-#[test]
-fn test_get_random_image() {
+pub fn get_random_image_url(image_list: ImageList) -> String {
+    let mut rng = rand::thread_rng();
+    let index = rng.gen_range(0, image_list.len());
+    let image_path = format!("{}{}{}", GITHUB_BASE_URL, "images/", image_list[index]);
+
+    image_path
+}
+
+#[tokio::test]
+async fn test_get_random_image_url() {
     // given
     use std::collections::HashSet;
-    let images = read_image_dir().unwrap();
-    let range_size = images.len() * 10;
+    let image_list: ImageList = get_image_list().await.unwrap();
+    let range_size = image_list.len() * 10;
     let iter = (0..range_size).into_iter();
-    let mut image_names: Vec<String> = iter.map(|_n| get_random_image().unwrap().1).collect();
+    let mut image_names: Vec<String> = iter
+        .map(|_n| get_random_image_url(image_list.clone()))
+        .collect();
 
     // when
     let unique_image_names: HashSet<String> = image_names.drain(0..range_size).collect();
-    let image_count = images.len();
+    let image_count = image_list.len();
 
     // assert
     assert_eq!(unique_image_names.len(), image_count);
 }
 
-#[test]
-fn test_read_image_dir() {
+pub async fn get_temp_image(url: String) -> Result<DynamicImage, Box<dyn std::error::Error>> {
+    let image_bytes = reqwest::get(&url[..]).await?.bytes().await?;
+    let mut temp_dir = temp_dir();
+    temp_dir.push("ednaldo/pereira.jpg");
+    let mut out = tokio::fs::File::create(&temp_dir).await?;
+
+    tokio::io::copy(&mut &*image_bytes, &mut out).await?;
+
+    match image::open(temp_dir.to_str().unwrap()) {
+        Ok(image) => Ok(image),
+        Err(error) => Err(Box::new(error)),
+    }
+}
+
+#[tokio::test]
+async fn test_get_temp_image() -> Result<(), Box<dyn std::error::Error>> {
     // given
-    let images = read_image_dir().unwrap();
+    let image_list = get_image_list().await?;
+    let url = get_random_image_url(image_list);
+    let temp_image: DynamicImage = get_temp_image(url).await?;
 
     // when
-    let image_count = images.len();
+    let (image_width, image_height) = temp_image.to_rgb().dimensions();
 
     // assert
-    assert_ne!(image_count, 0);
+    assert_eq!(image_width > 0, true);
+    assert_eq!(image_height > 0, true);
+
+    Ok(())
+}
+
+pub async fn get_image_list() -> Result<ImageList, Box<dyn std::error::Error>> {
+    let url = &format!("{}{}", GITHUB_BASE_URL, "images.txt")[..];
+    let images_string = reqwest::get(url).await?.text().await?;
+    let images_vec: ImageList = images_string
+        .split_whitespace()
+        .map(|image_name| String::from(image_name))
+        .collect();
+
+    Ok(images_vec)
+}
+
+#[tokio::test]
+async fn test_get_image_list() -> Result<(), Box<dyn std::error::Error>> {
+    // given
+    let image_list = get_image_list().await?;
+
+    // when
+    let image_list_size = image_list.len();
+
+    // assert
+    assert!(image_list_size > 0, true);
+
+    Ok(())
 }
