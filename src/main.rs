@@ -26,6 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resized_image: DynamicImage = resize_image(random_image, terminal_width, Some(2));
     let pixel_grid: PixelGrid = get_pixel_grid(resized_image);
 
+    // TODO test in more terminals
     print_image(pixel_grid, Some(2));
 
     Ok(())
