@@ -1,14 +1,43 @@
-use crate::grid::PixelGrid;
 use colorful::{Colorful, RGB};
 use image::{imageops, DynamicImage};
 use rand::Rng;
 use reqwest;
 use std::env::temp_dir;
 
+use crate::grid::PixelGrid;
+use crate::img::ImageError::{
+    CreateTempFolderError, ImageCreateError, ImageDownloadError, ImageListFetchError,
+    ImageListReadError, ImageReadError, TempImageCreateError,
+};
+
 const GITHUB_BASE_URL: &'static str =
     "https://raw.githubusercontent.com/michellocana/ednaldo/master/";
 
 pub type ImageList = Vec<String>;
+
+enum ImageError {
+    ImageDownloadError,
+    ImageReadError,
+    ImageCreateError,
+    CreateTempFolderError,
+    TempImageCreateError,
+    ImageListFetchError,
+    ImageListReadError,
+}
+
+impl ImageError {
+    fn new(error: ImageError) -> &'static str {
+        match error {
+            ImageDownloadError => "erro ao baixar imagem Ednaldo Pereira",
+            ImageReadError => "erro ao ler dados da imagem Ednaldo Pereira",
+            ImageCreateError => "erro ao criar imagem Ednaldo Pereira",
+            CreateTempFolderError => "erro ao criar pasta temporária Ednaldo Pereira",
+            TempImageCreateError => "erro ao ler a imagem temporária Ednaldo Pereira",
+            ImageListFetchError => "erro ao buscar imagens disponíveis Ednaldo Pereira",
+            ImageListReadError => "erro ao ler lista de imagens Ednaldo Pereira",
+        }
+    }
+}
 
 pub fn resize_image(
     image: DynamicImage,
@@ -126,16 +155,35 @@ async fn test_get_random_image_url() {
 
 // TODO make everything work in memory
 pub async fn get_temp_image(url: String) -> Result<DynamicImage, Box<dyn std::error::Error>> {
-    let image_bytes = reqwest::get(&url[..]).await?.bytes().await?;
+    let image_result = match reqwest::get(&url[..]).await {
+        Ok(image_result) => image_result,
+        Err(_) => Err(ImageError::new(ImageDownloadError))?,
+    };
+    let image_bytes = match image_result.bytes().await {
+        Ok(image_bytes) => image_bytes,
+        Err(_) => Err(ImageError::new(ImageReadError))?,
+    };
     let mut temp_dir = temp_dir();
     temp_dir.push("ednaldo/pereira.jpg");
-    let mut out = tokio::fs::File::create(&temp_dir).await?;
 
-    tokio::io::copy(&mut &*image_bytes, &mut out).await?;
+    if create_folder().is_err() {
+        Err(ImageError::new(CreateTempFolderError))?
+    }
+
+    let mut out = match tokio::fs::File::create(&temp_dir).await {
+        Ok(out) => out,
+        Err(_) => Err(ImageError::new(ImageCreateError))?,
+    };
+
+    let copy_result = tokio::io::copy(&mut &*image_bytes, &mut out).await;
+
+    if copy_result.is_err() {
+        Err(ImageError::new(ImageCreateError))?
+    }
 
     match image::open(temp_dir.to_str().unwrap()) {
         Ok(image) => Ok(image),
-        Err(error) => Err(Box::new(error)),
+        Err(_) => Err(ImageError::new(TempImageCreateError))?,
     }
 }
 
@@ -156,9 +204,29 @@ async fn test_get_temp_image() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn create_folder() -> std::result::Result<(), std::io::Error> {
+    let mut folder = temp_dir();
+    folder.push("ednaldo");
+
+    if !folder.as_path().exists() {
+        return std::fs::create_dir(folder);
+    }
+
+    Ok(())
+}
+
 pub async fn get_image_list() -> Result<ImageList, Box<dyn std::error::Error>> {
     let url = &format!("{}{}", GITHUB_BASE_URL, "images.txt")[..];
-    let images_string = reqwest::get(url).await?.text().await?;
+    let images_result = match reqwest::get(url).await {
+        Ok(images_result) => images_result,
+        Err(_) => Err(ImageError::new(ImageListFetchError))?,
+    };
+
+    let images_string = match images_result.text().await {
+        Ok(images_string) => images_string,
+        Err(_) => Err(ImageError::new(ImageListReadError))?,
+    };
+
     let images_vec: ImageList = images_string
         .split_whitespace()
         .map(|image_name| String::from(image_name))

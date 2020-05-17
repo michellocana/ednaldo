@@ -12,9 +12,22 @@ use term_size::dimensions as get_terminal_dimensions;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // TODO make "ednaldo" command only work with "pereira" arg
-    let image_list: ImageList = get_image_list().await?;
+    // TODO make generic error handler
+    let image_list: ImageList = match get_image_list().await {
+        Ok(image_list) => image_list,
+        Err(err) => {
+            println!("{}", err);
+            exit(0)
+        }
+    };
     let random_image_url = get_random_image_url(image_list);
-    let random_image = get_temp_image(random_image_url).await?;
+    let random_image = match get_temp_image(random_image_url).await {
+        Ok(random_image) => random_image,
+        Err(err) => {
+            println!("{}", err);
+            exit(0)
+        }
+    };
     let terminal_width: u32 = match get_terminal_dimensions() {
         Some((w, _h)) => w as u32,
         None => {
