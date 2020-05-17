@@ -28,13 +28,13 @@ enum ImageError {
 impl ImageError {
     fn new(error: ImageError) -> &'static str {
         match error {
-            ImageDownloadError => "erro ao baixar imagem Ednaldo Pereira",
-            ImageReadError => "erro ao ler dados da imagem Ednaldo Pereira",
-            ImageCreateError => "erro ao criar imagem Ednaldo Pereira",
-            CreateTempFolderError => "erro ao criar pasta temporária Ednaldo Pereira",
-            TempImageCreateError => "erro ao ler a imagem temporária Ednaldo Pereira",
-            ImageListFetchError => "erro ao buscar imagens disponíveis Ednaldo Pereira",
-            ImageListReadError => "erro ao ler lista de imagens Ednaldo Pereira",
+            ImageDownloadError => "Erro ao baixar imagem Ednaldo Pereira",
+            ImageReadError => "Erro ao ler dados da imagem Ednaldo Pereira",
+            ImageCreateError => "Erro ao criar imagem Ednaldo Pereira",
+            CreateTempFolderError => "Erro ao criar pasta temporária Ednaldo Pereira",
+            TempImageCreateError => "Erro ao ler a imagem temporária Ednaldo Pereira",
+            ImageListFetchError => "Erro ao buscar imagens disponíveis Ednaldo Pereira",
+            ImageListReadError => "Erro ao ler lista de imagens Ednaldo Pereira",
         }
     }
 }
