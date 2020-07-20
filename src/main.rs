@@ -2,7 +2,7 @@ mod error;
 mod grid;
 mod img;
 
-use error::print_error;
+use error::{print_error, print_warning};
 use grid::{get_pixel_grid, PixelGrid};
 use image::DynamicImage;
 use img::{
@@ -10,11 +10,17 @@ use img::{
 };
 use term_size::dimensions as get_terminal_dimensions;
 use colored;
+use std::env;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Adding colored terminal support to windows
     colored::control::set_virtual_terminal(true).ok();
+
+    if env::var("COLORTERM").is_err() {
+        print_warning("Seu terminal não possui suporte total à cores, o que pode impactar na beleza de Ednaldo Pereira à ser mostrada a seguir Ednaldo Pereira".into());
+    }
 
     let args = std::env::args().collect::<Vec<String>>();
     let has_lastname_arg = args.len() == 2;
