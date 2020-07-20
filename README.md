@@ -14,6 +14,6 @@ Uma vez que o cargo estiver instalado, basta executar o seguinte comando no term
 
 No terminal:
 
-`> ednaldo`
+`> Ednaldo Pereira`
 
 ![Ednaldo Pereira](docs/example.png)

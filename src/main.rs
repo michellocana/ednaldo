@@ -9,9 +9,13 @@ use img::{
     get_image_list, get_random_image_url, get_temp_image, print_image, resize_image, ImageList,
 };
 use term_size::dimensions as get_terminal_dimensions;
+use colored;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Adding colored terminal support to windows
+    colored::control::set_virtual_terminal(true).ok();
+
     let args = std::env::args().collect::<Vec<String>>();
     let has_lastname_arg = args.len() == 2;
     let is_ednaldo_pereira = has_lastname_arg && String::from(&args[1]).to_lowercase() == "pereira";

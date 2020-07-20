@@ -1,4 +1,4 @@
-use colorful::{Colorful, RGB};
+use colored::*;
 use image::{imageops, DynamicImage};
 use rand::Rng;
 use reqwest;
@@ -93,7 +93,7 @@ pub fn print_image(pixel_grid: PixelGrid, characters_per_pixel: Option<u32>) -> 
                 std::iter::repeat("█")
                     .take(characters_per_pixel_value as usize)
                     .collect::<String>()
-                    .color(RGB::new(r, g, b))
+                    .truecolor(r, g, b)
                     .bold()
             )
         }
