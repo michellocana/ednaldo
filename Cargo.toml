@@ -1,6 +1,6 @@
 [package]
 name = "ednaldo"
-version = "0.1.3"
+version = "0.1.4"
 description = "Mostra uma imagem clássica aleatória do Ednaldo Pereira"
 authors = ["Michell Ocaña <ocana.1997@hotmail.com>"]
 repository = "https://github.com/michellocana/ednaldo"
